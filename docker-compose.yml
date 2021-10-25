@@ -1,0 +1,36 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo
+    container_name: mongo
+    volumes:
+      - mongodb-data:/data/db
+    ports:
+      - 27017:27017
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo 10.10.10.60:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express-client
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+    volumes:
+      - mongodb-data:/data/db
+    depends_on:
+      - mongo
+    ports:
+      - 8081:8081
+    healthcheck:
+      test:  wget --quiet --tries=3 --spider http://10.10.10.60:8081 || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+volumes:
+  mongodb-data:
+    name: mongodb-data
